@@ -1,0 +1,111 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GitHubContributions from '../components/GitHubContributions.astro';
+import { SITE } from '../config';
+
+const avatarUrl = `https://avatars.githubusercontent.com/${SITE.githubUsername}?s=300`;
+const posts = (await getCollection('blog'))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+---
+<BaseLayout title={SITE.title}>
+  <div class="container page">
+
+    <!-- 个人简介 -->
+    <section class="profile">
+      <img class="avatar" src={avatarUrl} alt={SITE.author} width="120" height="120" />
+      <h1 class="name">{SITE.author}</h1>
+      <a class="email" href={`mailto:${SITE.email}`}>{SITE.email}</a>
+      <div class="profile-actions">
+        <a class="btn" href="/about" data-i18n="nav.me">关于我</a>
+      </div>
+    </section>
+
+    <!-- 教育背景 -->
+    <section class="block">
+      <h2 class="section-title" data-i18n="edu.title">教育背景</h2>
+      <a class="card edu-card" href="https://sft.hust.edu.cn/" target="_blank" rel="noopener">
+        <div class="edu-school" data-i18n="edu.school">华中科技大学</div>
+        <div class="edu-meta">
+          <span data-i18n="edu.major">人工智能</span> ·
+          <span data-i18n="edu.degree">本科</span> ·
+          <span data-i18n="edu.range">now</span>
+        </div>
+      </a>
+    </section>
+
+    <!-- GitHub 小绿点 -->
+    <GitHubContributions />
+
+    <!-- 最新文章 -->
+    <section class="block recent">
+      <div class="row">
+        <h2 class="section-title" data-i18n="post.title">最新文章</h2>
+        <a class="more" href="/blog" data-i18n="post.viewall">查看全部</a>
+      </div>
+      {posts.length === 0 ? (
+        <p class="empty">还没有文章，去 <code>src/content/blog/</code> 写一篇吧。</p>
+      ) : (
+        <div class="post-list">
+          {posts.map((p) => (
+            <a class="card post-item" href={`/blog/${p.id}/`}>
+              <div class="post-title">{p.data.title}</div>
+              <div class="post-meta">{p.data.pubDate.toISOString().slice(0, 10)}</div>
+              {p.data.description && <p class="post-desc">{p.data.description}</p>}
+              <div>{p.data.tags.map((t) => <span class="tag">{t}</span>)}</div>
+            </a>
+          ))}
+        </div>
+      )}
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page { padding-top: 3rem; padding-bottom: 2rem; }
+
+  /* 个人简介 */
+  .profile { text-align: center; padding: 1.5rem 0 2rem; }
+  .avatar {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    object-fit: cover;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+  .name { font-size: 2.4rem; margin: 0 0 .4rem; letter-spacing: -0.02em; }
+  .email { color: var(--text-dim); }
+  .email:hover { color: var(--accent); }
+  .profile-actions { margin-top: 1.1rem; }
+  .btn {
+    display: inline-block;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 9px 22px;
+    font-size: .92rem;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* 区块 */
+  .block { margin-top: 2.5rem; }
+  .section-title { font-size: 1.4rem; margin: 0 0 1rem; }
+
+  /* 教育 */
+  .edu-card { padding: 22px 24px; }
+  .edu-school { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+  .edu-meta { color: var(--text-dim); margin-top: .4rem; font-size: .95rem; }
+
+  /* 文章 */
+  .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .row .section-title { margin: 0; }
+  .more { color: var(--text-dim); font-size: .9rem; }
+  .post-item { display: block; }
+  .post-desc { color: var(--text-dim); margin: 6px 0 8px; font-size: .92rem; }
+  .empty { color: var(--text-dim); }
+
+  @media (max-width: 640px) { .name { font-size: 2rem; } }
+</style>

@@ -1,0 +1,47 @@
+---
+import { WALINE } from '../config';
+const hasServer = !!WALINE.serverURL;
+---
+<section class="waline-wrap">
+  <h2 class="waline-heading">💬 评论</h2>
+  {!hasServer ? (
+    <p class="waline-note">
+      评论系统尚未启用。请在
+      <code>src/config.ts</code> 的 <code>WALINE.serverURL</code> 填入你部署好的 Waline 地址(例如
+      <code>https://xxx.vercel.app</code>)。
+    </p>
+  ) : (
+    <div id="waline"></div>
+  )}
+</section>
+
+{WALINE.enabled && hasServer && (
+  <script define:vars={{ walineServerURL: WALINE.serverURL, walinePath: WALINE.path }}>
+    (async () => {
+      try {
+        const mod = await import('@waline/client');
+        const init = mod.default || mod.init;
+        init({
+          el: '#waline',
+          serverURL: walineServerURL,
+          path: walinePath,
+          dark: 'media',
+        });
+      } catch (e) {
+        console.error('Waline 初始化失败:', e);
+      }
+    })();
+  </script>
+)}
+
+<style>
+  .waline-wrap { margin-top: 3rem; }
+  .waline-heading { font-size: 1.15rem; border-bottom: 1px solid var(--border); padding-bottom: .5em; }
+  .waline-note {
+    color: var(--text-dim);
+    background: var(--card);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+</style>

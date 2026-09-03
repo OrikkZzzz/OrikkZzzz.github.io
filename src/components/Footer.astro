@@ -1,0 +1,15 @@
+---
+import { SITE } from '../config';
+const year = new Date().getFullYear();
+---
+<footer>
+  <div class="container">
+    <span>© {year} {SITE.author}</span>
+    <span class="dot">·</span>
+    <span>Powered by <a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+  </div>
+</footer>
+
+<style>
+  .dot { margin: 0 8px; opacity: .5; }
+</style>

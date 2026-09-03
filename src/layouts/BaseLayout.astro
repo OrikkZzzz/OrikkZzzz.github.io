@@ -1,0 +1,124 @@
+---
+import '../styles/global.css';
+import { SITE } from '../config';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const { title, description = SITE.description } = Astro.props;
+const pageTitle = title ? `${title} · ${SITE.author}` : SITE.title;
+---
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{pageTitle}</title>
+
+    <!-- 防闪烁:在绘制前设置主题(默认暗色) -->
+    <script is:inline>
+      (function () {
+        function resolve(t) {
+          if (t === 'system')
+            return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          return t || 'dark';
+        }
+        try {
+          var t = localStorage.getItem('theme') || 'dark';
+          document.documentElement.setAttribute('data-theme', resolve(t));
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <Nav />
+    <main>
+      <slot />
+    </main>
+    <Footer />
+
+    <script>
+      // ========= 主题 + 中英文切换 =========
+      const I18N = {
+        zh: {
+          'nav.home': '首页', 'nav.blog': '博客', 'nav.academic': '学术', 'nav.about': '关于',
+          'nav.me': '关于我',
+          'theme.dark': '暗色', 'theme.light': '亮色', 'theme.system': '跟随系统',
+          'lang.zh': '中文', 'lang.en': '英文',
+          'hero.hello': '你好，我是',
+          'hero.email': '邮箱',
+          'edu.title': '教育背景',
+          'edu.school': '华中科技大学', 'edu.major': '人工智能', 'edu.degree': '本科', 'edu.range': 'now',
+          'post.title': '最新文章', 'post.viewall': '查看全部',
+          'about.title': '关于我',
+        },
+        en: {
+          'nav.home': 'Home', 'nav.blog': 'Blog', 'nav.academic': 'Academic', 'nav.about': 'About',
+          'nav.me': 'About me',
+          'theme.dark': 'Dark', 'theme.light': 'Light', 'theme.system': 'System',
+          'lang.zh': '中文', 'lang.en': 'EN',
+          'hero.hello': "Hi, I'm",
+          'hero.email': 'Email',
+          'edu.title': 'Education',
+          'edu.school': 'Huazhong University of Science and Technology',
+          'edu.major': 'Artificial Intelligence', 'edu.degree': 'Undergraduate', 'edu.range': 'now',
+          'post.title': 'Latest posts', 'post.viewall': 'View all',
+          'about.title': 'About me',
+        },
+      };
+
+      function currentLang() { return localStorage.getItem('lang') || 'zh'; }
+
+      function applyI18n(lang) {
+        const dict = I18N[lang] || I18N.zh;
+        document.documentElement.setAttribute('data-lang', lang);
+        document.querySelectorAll('[data-i18n]').forEach((el) => {
+          const k = el.getAttribute('data-i18n');
+          if (dict[k] != null) el.textContent = dict[k];
+        });
+        document.querySelectorAll('[data-lang-set]').forEach((b) =>
+          b.classList.toggle('active', b.getAttribute('data-lang-set') === lang));
+        try { localStorage.setItem('lang', lang); } catch (e) {}
+      }
+
+      function resolveTheme(t) {
+        if (t === 'system')
+          return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        return t || 'dark';
+      }
+
+      function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', resolveTheme(t));
+        document.querySelectorAll('[data-theme-set]').forEach((b) =>
+          b.classList.toggle('active', b.getAttribute('data-theme-set') === t));
+        try { localStorage.setItem('theme', t); } catch (e) {}
+      }
+
+      // 事件委托
+      document.addEventListener('click', (e) => {
+        const langBtn = e.target.closest('[data-lang-set]');
+        if (langBtn) { applyI18n(langBtn.getAttribute('data-lang-set')); return; }
+        const themeBtn = e.target.closest('[data-theme-set]');
+        if (themeBtn) { applyTheme(themeBtn.getAttribute('data-theme-set')); }
+      });
+
+      // 跟随系统:监听系统主题变化
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+        if ((localStorage.getItem('theme') || 'dark') === 'system') {
+          document.documentElement.setAttribute('data-theme', resolveTheme('system'));
+        }
+      });
+
+      // 初始化
+      applyI18n(currentLang());
+      applyTheme(localStorage.getItem('theme') || 'dark');
+    </script>
+  </body>
+</html>

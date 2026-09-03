@@ -1,0 +1,86 @@
+---
+import { SITE } from '../config';
+const username = SITE.githubUsername;
+---
+<section class="contrib-wrap">
+  <h2 class="contrib-heading">Contribution</h2>
+  <div class="contrib card" data-username={username}>
+    <div class="contrib-grid" id="contrib-grid" aria-label="GitHub 年度提交热力图"></div>
+    <p class="contrib-total" id="contrib-total"></p>
+  </div>
+</section>
+
+<script>
+  const root = document.querySelector('.contrib');
+  if (root) {
+    const grid = root.querySelector('#contrib-grid');
+    const totalEl = root.querySelector('#contrib-total');
+    const username = root.dataset.username;
+
+    const API = `https://github-contributions-api.jogruber.de/v4/${username}?y=last`;
+    // 颜色由 CSS 变量决定,自动适配暗色/亮色(见 global.css 的 --contrib-0..4)
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function iso(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+
+    async function load() {
+      try {
+        const res = await fetch(API);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const list = data.contributions || [];
+        const byDate = {};
+        for (const c of list) byDate[c.date] = Math.min(Math.max(c.level || 0, 0), 4);
+
+        // 找出开始/结束,并按「周日为每周第一天」对齐列
+        const first = new Date(list[0]?.date);
+        const today = new Date();
+        const startSun = new Date(first);
+        startSun.setDate(first.getDate() - first.getDay()); // 回到本周日
+        const endSun = new Date(today);
+        endSun.setDate(today.getDate() - today.getDay());
+
+        let html = '';
+        for (let w = new Date(startSun); w <= endSun; w.setDate(w.getDate() + 7)) {
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(w);
+            d.setDate(w.getDate() + i); // 周日..周六
+            const key = iso(d);
+            const inRange = key >= list[0]?.date && key <= iso(today);
+            const lvl = inRange ? (byDate[key] ?? 0) : -1;
+            const bg = lvl >= 0 ? 'var(--contrib-' + lvl + ')' : 'transparent';
+            html += '<span class="contrib-cell" title="' + key + '" style="background:' + bg + '"></span>';
+          }
+        }
+        grid.innerHTML = html;
+        const lastYear = data.total?.lastYear;
+        if (totalEl) totalEl.textContent = `过去一年约 ${lastYear ?? '—'} 次仓库提交。`;
+      } catch (e) {
+        console.error('贡献图加载失败:', e);
+        if (grid) grid.innerHTML = '<div class="contrib-err">贡献图加载失败，请确认网络可访问 GitHub，且 GitHub 用户名正确。</div>';
+      }
+    }
+    load();
+  }
+</script>
+
+<style>
+  .contrib-heading { font-size: 1.15rem; margin: 0 0 1rem; }
+  .contrib { padding: 16px; }
+  .contrib-grid {
+    display: grid;
+    grid-template-columns: repeat(53, 1fr);
+    gap: 3px;
+    overflow: hidden;
+  }
+  .contrib-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    display: block;
+  }
+  .contrib-total { color: var(--text-dim); font-size: .85rem; margin: 12px 0 0; }
+  .contrib-err { color: var(--text-dim); font-size: .9rem; padding: 8px 0; }
+  @media (max-width: 640px) {
+    .contrib-grid { grid-template-columns: repeat(27, 1fr); gap: 2px; }
+  }
+</style>

@@ -1,0 +1,96 @@
+---
+import { SITE } from '../config';
+const path = Astro.url.pathname;
+const links = [
+  { href: '/blog', key: 'nav.blog', label: 'Blog' },
+  { href: '/academic', key: 'nav.academic', label: 'Academic' },
+  { href: '/about', key: 'nav.about', label: 'About' },
+];
+const isActive = (href) => path === href || (href !== '/' && path.startsWith(href));
+---
+<header class="site-header">
+  <div class="container topbar">
+    <a class="brand" href="/">{SITE.brand}</a>
+    <nav class="nav">
+      <div class="nav-links">
+        {links.map((l) => (
+          <a href={l.href} class={isActive(l.href) ? 'active' : ''} data-i18n={l.key}>{l.label}</a>
+        ))}
+      </div>
+      <div class="settings">
+        <div class="seg seg-lang" role="group" aria-label="language">
+          <button data-lang-set="zh" class="active" title="中文">中</button>
+          <button data-lang-set="en" title="English">EN</button>
+        </div>
+        <div class="seg seg-theme" role="group" aria-label="theme">
+          <button data-theme-set="dark" title="Dark">🌙</button>
+          <button data-theme-set="light" title="Light">☀️</button>
+          <button data-theme-set="system" title="Auto">🖥️</button>
+        </div>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<script>
+  // 顶栏滚动 → 液态玻璃
+  const header = document.querySelector('.site-header');
+  const onScroll = () => {
+    if (header) header.classList.toggle('scrolled', window.scrollY > 8);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+</script>
+
+<style>
+  .site-header { position: sticky; top: 0; z-index: 50; }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    gap: 16px;
+  }
+  .brand { font-weight: 800; font-size: 1.08rem; letter-spacing: -0.02em; white-space: nowrap; }
+  .brand:hover { color: var(--text); }
+  .nav { display: flex; align-items: center; gap: 18px; }
+  .nav-links { display: flex; gap: 20px; }
+  .nav-links a { color: var(--text-dim); font-size: .95rem; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a.active { color: var(--text); font-weight: 600; }
+
+  .settings { display: flex; align-items: center; gap: 10px; }
+  .seg {
+    display: inline-flex;
+    align-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .seg button {
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: .8rem;
+    line-height: 1;
+    padding: 5px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .seg button:hover { color: var(--text); }
+  .seg button.active { background: var(--accent); color: #fff; }
+
+  @media (max-width: 720px) {
+    .brand { font-size: .95rem; }
+    .nav { gap: 10px; }
+    .nav-links { gap: 12px; }
+    .settings { gap: 6px; }
+    .seg button { padding: 4px 8px; }
+  }
+  @media (max-width: 520px) {
+    .topbar { flex-wrap: wrap; height: auto; padding: 10px 0; }
+  }
+</style>
