@@ -1,5 +1,7 @@
 ---
 import { WALINE } from '../config';
+// Waline 评论组件样式(必须有,否则评论框渲染不出来)
+import '@waline/client/style';
 const hasServer = !!WALINE.serverURL;
 ---
 <section class="waline-wrap">
