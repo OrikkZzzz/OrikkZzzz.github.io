@@ -38,7 +38,7 @@ const username = SITE.githubUsername;
         const endSun = new Date(today);
         endSun.setDate(today.getDate() - today.getDay());          // 本周日
         const startSun = new Date(endSun);
-        startSun.setDate(endSun.getDate() - 38 * 7);               // 约 39 周 = 近 9 个月
+        startSun.setDate(endSun.getDate() - 52 * 7);               // 约 53 周 = 近 1 年
         const startIso = iso(startSun);
 
         let html = '';
@@ -82,7 +82,7 @@ const username = SITE.githubUsername;
           }).join('');
         }
 
-        if (totalEl) totalEl.textContent = `近九个月约 ${sixMonthCount} 次提交。`;
+        if (totalEl) totalEl.textContent = `近一年约 ${sixMonthCount} 次提交。`;
       } catch (e) {
         console.error('贡献图加载失败:', e);
         if (grid) grid.innerHTML = '<div class="contrib-err">贡献图加载失败，请确认网络可访问 GitHub，且 GitHub 用户名正确。</div>';
