@@ -16,7 +16,7 @@ const hasServer = !!WALINE.serverURL;
 </section>
 
 {WALINE.enabled && hasServer && (
-  <script define:vars={{ walineServerURL: WALINE.serverURL, walinePath: WALINE.path }}>
+  <script define:vars={{ walineServerURL: WALINE.serverURL }}>
     (async () => {
       try {
         const mod = await import('@waline/client');
@@ -24,7 +24,6 @@ const hasServer = !!WALINE.serverURL;
         init({
           el: '#waline',
           serverURL: walineServerURL,
-          path: walinePath,
           dark: 'media',
         });
       } catch (e) {
