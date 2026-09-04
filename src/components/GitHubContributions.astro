@@ -5,7 +5,8 @@ const username = SITE.githubUsername;
 <section class="contrib-wrap">
   <h2 class="contrib-heading">Contribution</h2>
   <div class="contrib card" data-username={username}>
-    <div class="contrib-grid" id="contrib-grid" aria-label="GitHub 年度提交热力图"></div>
+    <div class="contrib-months" id="contrib-months"></div>
+    <div class="contrib-grid" id="contrib-grid" aria-label="GitHub 近半年提交热力图"></div>
     <p class="contrib-total" id="contrib-total"></p>
   </div>
 </section>
@@ -14,6 +15,7 @@ const username = SITE.githubUsername;
   const root = document.querySelector('.contrib');
   if (root) {
     const grid = root.querySelector('#contrib-grid');
+    const monthsEl = root.querySelector('#contrib-months');
     const totalEl = root.querySelector('#contrib-total');
     const username = root.dataset.username;
 
@@ -32,29 +34,55 @@ const username = SITE.githubUsername;
         const byDate = {};
         for (const c of list) byDate[c.date] = Math.min(Math.max(c.level || 0, 0), 4);
 
-        // 找出开始/结束,并按「周日为每周第一天」对齐列
-        const first = new Date(list[0]?.date);
         const today = new Date();
-        const startSun = new Date(first);
-        startSun.setDate(first.getDate() - first.getDay()); // 回到本周日
         const endSun = new Date(today);
-        endSun.setDate(today.getDate() - today.getDay());
+        endSun.setDate(today.getDate() - today.getDay());          // 本周日
+        const startSun = new Date(endSun);
+        startSun.setDate(endSun.getDate() - 38 * 7);               // 约 39 周 = 近 9 个月
+        const startIso = iso(startSun);
 
         let html = '';
+        let colCount = 0;
+        let sixMonthCount = 0;
+        let prevMonth = -1;
+        const monthSpans = [];
+
+        for (const c of list) {
+          if (c.date >= startIso && c.date <= iso(today)) sixMonthCount += c.count || 0;
+        }
+
         for (let w = new Date(startSun); w <= endSun; w.setDate(w.getDate() + 7)) {
+          const sunday = new Date(w);
+          // 用该周的周三代表月份,保证月标签不会断在中间
+          const wed = new Date(sunday);
+          wed.setDate(sunday.getDate() + 3);
+          const m = wed.getMonth();
+          if (m !== prevMonth) { monthSpans.push({ m, weeks: 0 }); prevMonth = m; }
+          monthSpans[monthSpans.length - 1].weeks++;
+
           for (let i = 0; i < 7; i++) {
-            const d = new Date(w);
-            d.setDate(w.getDate() + i); // 周日..周六
+            const d = new Date(sunday);
+            d.setDate(sunday.getDate() + i);              // 周日..周六
             const key = iso(d);
-            const inRange = key >= list[0]?.date && key <= iso(today);
+            const inRange = key >= startIso && key <= iso(today);
             const lvl = inRange ? (byDate[key] ?? 0) : -1;
             const bg = lvl >= 0 ? 'var(--contrib-' + lvl + ')' : 'transparent';
             html += '<span class="contrib-cell" title="' + key + '" style="background:' + bg + '"></span>';
           }
+          colCount++;
         }
+
         grid.innerHTML = html;
-        const lastYear = data.total?.lastYear;
-        if (totalEl) totalEl.textContent = `过去一年约 ${lastYear ?? '—'} 次仓库提交。`;
+        grid.style.gridTemplateColumns = 'repeat(' + colCount + ', 1fr)';
+
+        if (monthsEl) {
+          monthsEl.innerHTML = monthSpans.map(ms => {
+            const label = (ms.m + 1) + '月';
+            return '<span style="flex:' + ms.weeks + ' 0 0">' + label + '</span>';
+          }).join('');
+        }
+
+        if (totalEl) totalEl.textContent = `近九个月约 ${sixMonthCount} 次提交。`;
       } catch (e) {
         console.error('贡献图加载失败:', e);
         if (grid) grid.innerHTML = '<div class="contrib-err">贡献图加载失败，请确认网络可访问 GitHub，且 GitHub 用户名正确。</div>';
@@ -67,9 +95,23 @@ const username = SITE.githubUsername;
 <style>
   .contrib-heading { font-size: 1.15rem; margin: 0 0 1rem; }
   .contrib { padding: 16px; }
+
+  /* 月份标签行 */
+  .contrib-months {
+    display: flex;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .contrib-months span { flex: 0 0 auto; overflow: hidden; }
+
+  /* 热力图:列优先(每个周一列),每列 7 天 */
   .contrib-grid {
     display: grid;
-    grid-template-columns: repeat(53, 1fr);
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, 1fr);
     gap: 3px;
     overflow: hidden;
   }
@@ -80,7 +122,9 @@ const username = SITE.githubUsername;
   }
   .contrib-total { color: var(--text-dim); font-size: .85rem; margin: 12px 0 0; }
   .contrib-err { color: var(--text-dim); font-size: .9rem; padding: 8px 0; }
+
   @media (max-width: 640px) {
-    .contrib-grid { grid-template-columns: repeat(27, 1fr); gap: 2px; }
+    .contrib-months { font-size: 10px; }
+    .contrib-grid { gap: 2px; }
   }
 </style>

@@ -42,7 +42,7 @@ export const SITE = {
 
 // Waline 评论配置
 export const WALINE = {
-  serverURL: '',
+  serverURL: 'https://waline-2-wine.vercel.app',
   path: '/:pathname',
   enabled: true,
 };

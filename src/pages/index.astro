@@ -94,8 +94,9 @@ const posts = (await getCollection('blog'))
   .block { margin-top: 2.5rem; }
   .section-title { font-size: 1.4rem; margin: 0 0 1rem; }
 
-  /* 教育 */
-  .edu-card { padding: 22px 24px; }
+  /* 教育(用 <a> 包裹,需 display:block 才能正常显示卡片方框) */
+  .edu-card { display: block; padding: 22px 24px; }
+  .edu-card:hover { color: inherit; }
   .edu-school { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
   .edu-meta { color: var(--text-dim); margin-top: .4rem; font-size: .95rem; }
 

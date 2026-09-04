@@ -5,7 +5,9 @@
 - 主页(Hero + GitHub 提交小绿点 + 最新文章)
 - Markdown / MDX 博客(git 发布,代码高亮,标签,日期)
 - GitHub 贡献热力图(读取公开数据,**不需要 token**)
-- Waline 评论(需你自行部署服务端)
+- Waline 评论(需你自行部署服务端,推荐腾讯云开发 CloudBase 存储)
+- 暗色 / 亮色 / 跟随系统主题
+- 中英文切换
 - GitHub Actions 自动构建并发布到 GitHub Pages
 - RSS 订阅(`/feed.xml`)
 
@@ -40,8 +42,6 @@
 ```
 
 ## 快速开始(在你自己的终端里跑)
-
-> 下面所有用到 `npm`/`git`/`gh` 的命令,都在**你自己电脑的终端**里执行。我这个运行环境因网络受限无法代跑,但代码已全部写好。
 
 ### 1. 安装依赖
 
@@ -105,6 +105,13 @@ gh repo create <你的用户名>.github.io --public --source=. --push
 
 > ⚠️ **仓库名要符合 GitHub Pages 规则**:如果你想得到 `https://<用户名>.github.io`,仓库名必须是 `<用户名>.github.io`(即"用户站点")。若用别的名字,则地址是 `<用户名>.github.io/<仓库名>`,此时需把 `astro.config.mjs` 里的 `base` 设成 `/仓库名/`。
 
+> 💡 若 `git push` 报 TLS/握手错误,多半是**你的代理(Clash)节点不通**,先让浏览器能打开 github.com,且 git 走代理:
+> ```bash
+> git config --global http.sslBackend openssl
+> git config --global http.proxy http://127.0.0.1:7897
+> git config --global https.proxy http://127.0.0.1:7897
+> ```
+
 ### 7. 开启 Pages(只需一次)
 
 推送完成后,到 GitHub 仓库页面:
@@ -119,27 +126,36 @@ gh repo create <你的用户名>.github.io --public --source=. --push
 
 ## 配上 Waline 评论
 
-评论需要你部署一个 Waline 服务端(Vercel)和一个数据存储(LeanCloud / CloudBase)。
+评论需要你部署一个 Waline 服务端(Vercel)和一个数据存储(推荐腾讯云开发 CloudBase)。
 
-### 9. 创建数据存储(LeanCloud)
+### 9. 创建数据存储(腾讯云开发 CloudBase)
 
-1. 注册 [LeanCloud](https://console.leancloud.app/)(推荐国际版)
-2. 创建一个应用,记下:
-   - `AppID`
-   - `AppKey`
-   - 你的应用域名(或 `APP_ID` 对应的绑定域名)
-3. 在控制台添加一个 **Web 安全域名**(填你部署后的站点地址,如 `https://<你>.github.io`)
+Waline 官方支持 CloudBase(腾讯云开发),国内访问快。需实名认证。
+
+1. 注册/登录 [腾讯云](https://cloud.tencent.com/),开通「云开发 CloudBase」并**实名认证**
+2. 云开发控制台 → 新建一个**环境**(如 `blog`),记下 **环境 ID**(形如 `blog-d1gl6xexfdb6bc506`)
+3. 获取访问密钥:
+   - 腾讯云控制台 → 搜「**访问管理 CAM**」→ [API 密钥管理](https://console.cloud.tencent.com/cam/capi) → **新建密钥**
+   - 记下 `SecretId`(`AKID` 开头)和 `SecretKey`
+   - ⚠️ 这两个值**只显示一次**,请立即保存
 
 ### 10. 部署 Waline 到 Vercel
 
-1. 打开 Waline 一键部署的[参考仓库](https://github.com/walinejs/waline) 或直接在 Vercel 里导入 `@waline/vercel` 的模板
-2. 按要求填入上面的 `AppID`/`AppKey`(作为 Vercel 环境变量)
-3. 部署完成后你会得到一个地址,形如 `https://xxx.vercel.app`
-4. (可选)在 Vercel 项目 → Settings → Domains 里绑定一个你自己的域名
+1. 打开 Waline 一键部署[参考仓库](https://github.com/walinejs/waline) 或直接在 Vercel 导入 `@waline/vercel`
+2. 在 Vercel 项目的 **Environment Variables** 添加:
+
+   | 变量 | 值 |
+   |---|---|
+   | `CLOUDBASE_ENV_ID` | 你的环境 ID(如 `blog-d1gl6xexfdb6bc506`) |
+   | `CLOUDBASE_SECRET_ID` | 你的 `SecretId` |
+   | `CLOUDBASE_SECRET_KEY` | 你的 `SecretKey` |
+
+3. 部署完成得到地址,形如 `https://xxx.vercel.app`(**这就是 serverURL**)
+4. (可选)在 Vercel → Settings → Domains 绑定自定义域名
 
 ### 11. 回到站点配置
 
-打开 `src/config.ts`,把 `WALINE.serverURL` 填成你第 10 步得到的地址:
+打开 `src/config.ts`,把 `WALINE.serverURL` 填成第 10 步的地址:
 
 ```ts
 export const WALINE = {
@@ -150,7 +166,7 @@ export const WALINE = {
 
 提交并推送,文章页就会出现评论区。
 
-> ⚠️ **安全提醒**:`AppID`/`AppKey`、GitHub 的 Personal Access Token 这类密钥,都在各自的控制台/环境变量里配置,`src/config.ts` 里只需要 `serverURL`。**不要把密钥写进代码或发到聊天里。**
+> ⚠️ **安全提醒**:`SecretId`/`SecretKey` 等密钥只作为 **Vercel 环境变量**配置,`src/config.ts` 里只需要 `serverURL`。**不要把密钥写进仓库代码或发到聊天里。**
 
 ## 常用命令
 
@@ -171,7 +187,7 @@ npm run preview  # 本地预览构建结果
 | 改 `src/config.ts` 为你的信息 | ⚠️ 需你填 |
 | 建 GitHub 仓库并推送 | ⚠️ 需你执行(需登录 gh) |
 | 开启 GitHub Pages(Source 选 GitHub Actions) | ⚠️ 需你一次性设置 |
-| 注册 LeanCloud + 配置 | ⚠️ 需你建账号拿 AppID/AppKey |
+| 注册腾讯云开发 CloudBase + 拿 CAM 密钥 | ⚠️ 需你操作 |
 | 部署 Waline 到 Vercel + 填 serverURL | ⚠️ 需你操作 |
 | (可选)买域名 / 接 Cloudflare R2 | ⚠️ 后续再弄 |
 
